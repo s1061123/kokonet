@@ -15,22 +15,22 @@ comment
 '''
 
 #parameters
-if os.environ["VPP_CONTROLLER_URL"]:
+if "VPP_CONTROLLER_URL" in os.environ:
     vpp_controller_url = os.environ["VPP_CONTROLLER_URL"]
 else:
     vpp_controller_url = "http://10.0.0.10:5000"
 
-if os.environ["VPP_VTEP_IP"]:
+if "VPP_VTEP_IP" in os.environ:
     switch_ctrl_ip = { os.environ["VPP_VTEP_IP"]: vpp_controller_url }
 else:
     switch_ctrl_ip = { "10.1.1.1": vpp_controller_url }
 
-if os.environ["ETCD_CLIENT_HOST"]:
+if "ETCD_CLIENT_HOST" in os.environ:
     etcd_host = os.environ["ETCD_CLIENT_HOST"]
 else:
     etcd_host = "127.0.0.1"
 
-if os.environ["ETCD_CLIENT_PORT"]:
+if "ETCD_CLIENT_PORT" in os.environ:
     etcd_port = os.environ["ETCD_CLIENT_PORT"]
 else:
     etcd_port = 2379
@@ -91,9 +91,11 @@ def get_new_vtep_info():
 
                 #add key into etcd
                 etcd = etcd3.client(host = etcd_host, port = etcd_port)
-                etcd.put('kokonet/%s/%d'%(request_data['switchip'], vnid), endpoint_data)
+                etcd.put('kokonet/%s/%d'%(endpoint_data['switchip'], i),
+                         json.dumps(endpoint_data))
                 #send to vtep_driver
-                vtep_config_add(hostip, switchip, i)
+                vtep_config_add(endpoint_data['hostip'],
+                                endpoint_data['switchip'], i)
                 break
 
         return json.dumps({'error': 'OK', 'vnid': i})
@@ -114,7 +116,7 @@ def delete_vtep_info():
             vtep_config_del(hostip, switchip, i)
 
             etcd = etcd3.client(host = etcd_host, port = etcd_port)
-            etcd.delete('kokonet/%s/%d'%(switchip, i))
+            etcd.delete('kokonet/%s/%s'%(switchip, i))
 
             del switch_endpoint[i]
             #print("%s deleted"%i)
