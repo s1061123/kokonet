@@ -17,4 +17,4 @@ RUN apk add --update \
 
 
 EXPOSE 80
-CMD ["/usr/bin/gunicorn", "server:app", "--bind", "0.0.0.0:80"]
+CMD ["/usr/bin/gunicorn", "--log-file", "-", "--bind", "0.0.0.0:80", "server:app"]

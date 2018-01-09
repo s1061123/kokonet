@@ -31,7 +31,7 @@ else:
     etcd_host = "127.0.0.1"
 
 if "ETCD_CLIENT_PORT" in os.environ:
-    etcd_port = os.environ["ETCD_CLIENT_PORT"]
+    etcd_port = int(os.environ["ETCD_CLIENT_PORT"])
 else:
     etcd_port = 2379
 
@@ -42,6 +42,15 @@ switch_endpoint = {}
 etcd = None
 
 def init():
+    global switch_vnid_range_begin, switch_vnid_range_end
+    global vpp_controller_url, switch_ctrl_ip, etcd_host, etcd_port
+
+    #print current configuration
+    print("vpp_controller_url:%s"%vpp_controller_url)
+    print("switch_ctrl_ip:%s"%switch_ctrl_ip)
+    print("etcd:%s:%d"%(etcd_host, etcd_port))
+    sys.stdout.flush()
+
     etcd = etcd3.client(host = etcd_host, port = etcd_port)
     (v, meta) = etcd.get('kokonet/vnid_range')
     if v == None:
@@ -125,14 +134,21 @@ def delete_vtep_info():
 
 @app.route('/vtep', methods={'GET'})
 def get_vtep_info():
+    #TBD
+    return json.dumps({'error': 'TBD'})
+
+@app.route('/status', methods={'GET'})
+def get_status():
+    sys.stdout.flush()
     return json.dumps({'error': 'OK'})
 
 if app.debug:
     from werkzeug.debug import DebuggedApplication
     app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
+init()
+
 # in case of gunicorn,
 # gunicorn server:app --bind <ip>:80
 if __name__ == '__main__':
-    init()
     app.run(port=80)
