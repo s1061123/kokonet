@@ -7,6 +7,8 @@
   "vtep_parent_if": "<ADD datapath interface(e.g. eth1)>",
   "vtep_src_ip": "<ADD vtep_parent_if IP (e.g. 10.0.0.21)>", 
   "controller_uri": "<ADD controller_url (e.g. http://10.1.1.1/)>",
+  "etcd_host": "<ADD kokonet-etcd ip (e.g. 10.0.0.21)>",
+  "etcd_port": 2379, "<Change if the port is changed>"
   "delegate": {
 	"<ADD CNI definition for admin plane as following>"
 	------ sample

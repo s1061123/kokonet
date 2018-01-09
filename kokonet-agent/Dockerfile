@@ -13,9 +13,9 @@ RUN apk add --update \
 	wget \
   && pip install --upgrade pip \
   && pip install -r /app/requirements.txt \
-  && wget --no-check-certificate https://github.com/redhat-nfvpe/koro/releases/download/v0.1/koro_v0.1_linux_amd64.tar.gz \
-  && tar xvfpz koro_v0.1_linux_amd64.tar.gz \
-  && cp koro_v0.1_linux_amd64/koro . \
+  && wget --no-check-certificate https://github.com/redhat-nfvpe/koro/releases/download/v0.2/koro_v0.2_linux_amd64.tar.gz \
+  && tar xvfpz koro_v0.2_linux_amd64.tar.gz \
+  && cp koro_v0.2_linux_amd64/koro . \
   && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/app/agent.py"]

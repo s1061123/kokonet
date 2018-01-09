@@ -22,6 +22,8 @@ import (
 	"runtime"
 	"os"
 	"bytes"
+	"context"
+	"time"
 
 	"net/http"
 
@@ -30,10 +32,16 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
+	"github.com/coreos/etcd/clientv3"
 	//"github.com/containernetworking/plugins/pkg/ip"
 	//"github.com/containernetworking/plugins/pkg/ipam"
 
 	koko "github.com/redhat-nfvpe/koko/api"
+)
+
+var (
+        etcdDialTimeout    = 5 * time.Second
+        etcdRequestTimeout = 10 * time.Second
 )
 
 // K8sArgs is the valid CNI_ARGS used for Kubernetes
@@ -58,6 +66,8 @@ type PluginConf struct {
 	InterfaceNames	[]string	`json:"interfaces"`
 	VtepIP		string		`json:"vtep_ip"`
 	ControllerURI	string		`json:"controller_uri"`
+	EtcdHost	string		`json:"etcd_host"`
+	EtcdPort	int		`json:"etcd_port"`
 
 	RawPrevResult *map[string]interface{} `json:"prevResult"`
 	PrevResult    *current.Result         `json:"-"`
@@ -215,6 +225,30 @@ func getNetworkEndpointInfo(isAdd bool, controllerURI string,
 	return repl, nil
 }
 
+func addNetNS(args *skel.CmdArgs, conf *PluginConf) error {
+	endpoints := []string{ fmt.Sprintf("http://%s:%d", conf.EtcdHost, conf.EtcdPort) }
+
+        cli, err := clientv3.New(clientv3.Config{
+                Endpoints:   endpoints,
+                DialTimeout: etcdDialTimeout,
+        })
+        if err != nil {
+		fp, _ := os.OpenFile("/tmp/cni_debug", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		defer fp.Close()
+		fmt.Fprintf(fp, "endpoints: %v\n", endpoints)
+		fmt.Fprintf(fp, "kokonet-cni: %v\n", err)
+                return err
+        }
+
+        defer cli.Close() // make sure to close the client
+        ctx, cancel := context.WithTimeout(context.Background(), etcdRequestTimeout)
+	_, err = cli.Put(ctx, fmt.Sprintf("kokonet/netns/%s/%s", conf.SrcIpAddress, args.ContainerID),
+                         args.Netns)
+        cancel()
+
+	return err
+}
+
 func cmdAdd(args *skel.CmdArgs) error {
 	conf, err := parseConfig(args.StdinData)
 	if err != nil {
@@ -236,6 +270,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return nil
 	}
 
+	if err := addNetNS(args, conf); err != nil {
+		return err
+	}
 	vtepreq := NetworkManagerVtepReq{}
 	vtepreq.Hostip = conf.SrcIpAddress
 	vtepreq.Switchip = conf.VtepIP
@@ -280,6 +317,24 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return types.PrintResult(result, conf.CNIVersion)
 }
 
+func delNetNS(args *skel.CmdArgs, conf *PluginConf) error {
+	endpoints := []string{ fmt.Sprintf("http://%s:%d", conf.EtcdHost, conf.EtcdPort) }
+        cli, err := clientv3.New(clientv3.Config{
+                Endpoints:   endpoints,
+                DialTimeout: etcdDialTimeout,
+        })
+        if err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
+		return err
+        }
+        defer cli.Close() // make sure to close the client
+
+        ctx, _ := context.WithTimeout(context.Background(), etcdRequestTimeout)
+	_, err = cli.Delete(ctx, fmt.Sprintf("kokonet/netns/%s/%s", conf.SrcIpAddress, args.ContainerID))
+
+	return err
+}
+
 func cmdDel(args *skel.CmdArgs) error {
 	conf, err := parseConfig(args.StdinData)
 	if err != nil {
@@ -291,6 +346,9 @@ func cmdDel(args *skel.CmdArgs) error {
 		return nil
 	}
 
+	if err := delNetNS(args, conf); err != nil {
+		return err
+	}
 	vtepreq := NetworkManagerVtepReq{}
 	vtepreq.Hostip = conf.SrcIpAddress
 	vtepreq.Switchip = conf.VtepIP

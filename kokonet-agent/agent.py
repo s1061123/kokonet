@@ -10,6 +10,9 @@ def get_addr_diff(containerid, old_vals, new_vals):
         old_set = set()
     else:
         old_set = set(json.loads(old_vals)['address'])
+    if new_vals == '':
+        return (set(), old_set)
+
     new_set = set(json.loads(new_vals)['address'])
     new_addrs = new_set - old_set
     remove_addrs = old_set - new_set
@@ -17,18 +20,21 @@ def get_addr_diff(containerid, old_vals, new_vals):
     print("to be removed:", remove_addrs)
     return (new_addrs, remove_addrs)
 
-def change_addr(containerif, old_vals, new_vals):
+def change_addr(etcd, hostip, containerif, old_vals, new_vals):
     (new_addrs, remove_addrs) = get_addr_diff(containerif, old_vals, new_vals)
     n = containerif.split('/')
     containerid = n[0]
     ifname = n[1]
+
+    (nsname, meta) = etcd.get('kokonet/netns/%s/%s'%(hostip, containerid))
+
     for i in remove_addrs:
-        cmd = "koro docker %s address del %s dev %s"%(containerid, i, ifname)
-        ret = subprocess.call(cmd)
+        cmd = "/app/koro netns /host%s address del %s dev %s"%(nsname, i, ifname)
+        ret = subprocess.call(cmd.split())
         print("cmd:", cmd, ret)
     for i in new_addrs:
-        cmd = "koro docker %s address add %s dev %s"%(containerid, i, ifname)
-        ret = subprocess.call(cmd)
+        cmd = "/app/koro netns /host%s address add %s dev %s"%(nsname, i, ifname)
+        ret = subprocess.call(cmd.split())
         print("cmd:", cmd, ret)
 
 if __name__ == '__main__':
@@ -65,17 +71,19 @@ if __name__ == '__main__':
                    containerid = keys[3]
                    ifname = keys[4]
                    containerif = "%s/%s"%(containerid,ifname)
+
                    if type(event) == etcd3.events.PutEvent:
                        val = event.value.decode('utf-8')
                        print("containerid/ifname: %s"%containerif)
                        print(json.loads(val)['address'])
                        if containerif in cache:
-                           change_addr(containerif, cache[containerif], val)
+                           change_addr(etcd, hostip, containerif, cache[containerif], val)
                        else:
-                           change_addr(containerif, '', val)
+                           change_addr(etcd, hostip, containerif, '', val)
                        cache[containerif] = val
                    elif type(event) == etcd3.events.DeleteEvent:
                        print("containerid/ifname: %s"%containerif)
+                       change_addr(etcd, hostip, containerif, '', '')
                        del cache[containerif]
         
             print(event)
