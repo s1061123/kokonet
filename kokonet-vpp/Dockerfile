@@ -1,5 +1,5 @@
-# run:
-# docker run -e DATAPLANE_IP=<this node ip> -e ETCD_CLIENT_HOST=<etcd host> -e ETCD_CLIENT_PORT=<port>
+# run example:
+# docker run -d -p 5000:5000 --name kokonet-vpp --privileged -v /run/vpp:/run/vpp <image>
 #FROM centos/tools:latest
 FROM centos:centos7
 
@@ -10,7 +10,7 @@ COPY supervisord.conf /etc/supervisord.conf
 
 #RUN yum check-update ca-certificates
 RUN yum -y update \
-  && yum -y install iproute \
+  && yum -y install iproute numactl \
   && yum -y install epel-release \
   && yum -y install vpp vpp-api-python vpp-plugins supervisor python-pip \
   && pip install --upgrade pip \

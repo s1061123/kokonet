@@ -20,6 +20,10 @@ def get_vpp_version():
     ver = v.get_version()
     return ver
 
+@app.route('/status')
+def get_status():
+    return json.dumps({'error': 'OK'})
+
 # see 00_notebook/home_backup/src/CNI_script/server.py 
 # request.form['scripts'] // for POST
 # request.args.get('') // for GET
