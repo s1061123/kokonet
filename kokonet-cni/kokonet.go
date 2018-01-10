@@ -160,16 +160,16 @@ func getifname() (f func() string) {
 func delegateAdd(argif string, netconf map[string]interface{}) (*types.Result, error) {
 	netconfBytes, err := json.Marshal(netconf)
 	if err != nil {
-		return nil, fmt.Errorf("Ratchet: error serializing multus delegate netconf: %v", err)
+		return nil, fmt.Errorf("kokonet-cni: error serializing multus delegate netconf: %v", err)
 	}
 
 	if os.Setenv("CNI_IFNAME", argif) != nil {
-		return nil, fmt.Errorf("Ratchet: error in setting CNI_IFNAME")
+		return nil, fmt.Errorf("kokonet-cni: error in setting CNI_IFNAME")
 	}
 
 	result, err := invoke.DelegateAdd(netconf["type"].(string), netconfBytes)
 	if err != nil {
-		return nil, fmt.Errorf("Ratchet: error in invoke Delegate add - %q: %v", netconf["type"].(string), err)
+		return nil, fmt.Errorf("kokonet-cni: error in invoke Delegate add - %q: %v", netconf["type"].(string), err)
 	}
 
 	return &result, nil
@@ -178,12 +178,12 @@ func delegateAdd(argif string, netconf map[string]interface{}) (*types.Result, e
 func delegateDel(argif string, netconf map[string]interface{}) error {
 	netconfBytes, err := json.Marshal(netconf)
 	if err != nil {
-		return fmt.Errorf("Ratchet: error serializing multus delegate netconf: %v", err)
+		return fmt.Errorf("kokonet-cni: error serializing multus delegate netconf: %v", err)
 	}
 
 	err = invoke.DelegateDel(netconf["type"].(string), netconfBytes)
 	if err != nil {
-		return fmt.Errorf("Ratchet: error in invoke Delegate del - %q: %v", netconf["type"].(string), err)
+		return fmt.Errorf("kokonet-cni: error in invoke Delegate del - %q: %v", netconf["type"].(string), err)
 	}
 
 	return err
