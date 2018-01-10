@@ -233,10 +233,6 @@ func addNetNS(args *skel.CmdArgs, conf *PluginConf) error {
                 DialTimeout: etcdDialTimeout,
         })
         if err != nil {
-		fp, _ := os.OpenFile("/tmp/cni_debug", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-		defer fp.Close()
-		fmt.Fprintf(fp, "endpoints: %v\n", endpoints)
-		fmt.Fprintf(fp, "kokonet-cni: %v\n", err)
                 return err
         }
 
@@ -252,25 +248,30 @@ func addNetNS(args *skel.CmdArgs, conf *PluginConf) error {
 func cmdAdd(args *skel.CmdArgs) error {
 	conf, err := parseConfig(args.StdinData)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 
 	k8sArgs := K8sArgs{}
 	if err = types.LoadArgs(args.Args, &k8sArgs); err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 
 	r, err := delegateAdd(args.IfName, conf.Delegate)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 
 	// if container is admin namespace, just add delegateAdd, then return
 	if string(k8sArgs.K8S_POD_NAMESPACE) == "kube-system" {
-		return nil
+		result, _ := current.NewResultFromResult(*r)
+		return types.PrintResult(result, conf.CNIVersion)
 	}
 
 	if err := addNetNS(args, conf); err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 	vtepreq := NetworkManagerVtepReq{}
@@ -290,6 +291,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 		repl, err := getNetworkEndpointInfo(true, conf.ControllerURI, vtepreq)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 			return err
 		}
 
@@ -298,6 +300,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 			for i := range repl.Address {
 				ip, mask, err := net.ParseCIDR(repl.Address[i])
 				if err != nil {
+					fmt.Fprintf(os.Stderr, "failed to parse IP addr(%d) %s: %v",
+							  i, repl.Address[i], err)
 					return fmt.Errorf("failed to parse IP addr(%d) %s: %v",
 							  i, repl.Address[i], err)
 				}
@@ -309,6 +313,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			}
 		}
 		if err := koko.MakeVxLan(conIF, vxlan); err != nil {
+			fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 			return err
 		}
 	}
@@ -324,7 +329,6 @@ func delNetNS(args *skel.CmdArgs, conf *PluginConf) error {
                 DialTimeout: etcdDialTimeout,
         })
         if err != nil {
-		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
         }
         defer cli.Close() // make sure to close the client
@@ -338,6 +342,7 @@ func delNetNS(args *skel.CmdArgs, conf *PluginConf) error {
 func cmdDel(args *skel.CmdArgs) error {
 	conf, err := parseConfig(args.StdinData)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 
@@ -347,6 +352,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	if err := delNetNS(args, conf); err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 	vtepreq := NetworkManagerVtepReq{}
@@ -372,6 +378,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	if err := delegateDel(args.IfName, conf.Delegate); err != nil {
+		fmt.Fprintf(os.Stderr, "kokonet-cni: %v", err)
 		return err
 	}
 
