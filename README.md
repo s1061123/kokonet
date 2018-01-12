@@ -1,13 +1,19 @@
 # kokonet: simple CNI plugin for point-to-point based network in Kubernetes
 
+# Current status
+
+Not officially released yet. Update documents and some tools, then released. Stay tune!
+Feel free to ask any detail to me (= Tomofumi Hayashi / s1061123@gmail.com)
+
 # What is 'kokonet'?
 
 `kokonet` provides simple point-to-point based network (using vxlan for now) for Kubernetes as following chaining topology.
-<rawtext>
+
+```
 +-------+       +-------+         +-------+
 | Pod A |-------| Pod B |---------| Pod C |
 +-------+       +-------+         +-------+
-</rawtext>
+```
 
 # Components
 
