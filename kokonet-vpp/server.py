@@ -55,6 +55,13 @@ def delete_vtep():
         return json.dumps({'error': 'NG!'})
     return json.dumps({'error': 'OK'})
 
+@app.route('/vtep_ifindex/<vppip>/<hostip>/<vnid>', methods={'GET'})
+def get_ifindex(vppip, hostip, vnid):
+    ifindex = v.get_vxlan_ifindex(vppip, hostip, int(vnid))
+    if ifindex == None:
+        return json.dumps({'error': 'Not found'})
+    return json.dumps({'error': 'OK', 'ifindex':ifindex})
+
 @app.route('/vtep_connect', methods={'POST','GET'})
 def xconnect():
     if request.method == "POST":

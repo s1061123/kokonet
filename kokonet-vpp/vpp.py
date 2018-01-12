@@ -123,8 +123,6 @@ class vpp_ctl:
                            ip_address(intf.dst_address) == ip_address(unicode(dst)):
                                return intf.sw_if_index
                     else:
-                        print("i:", intf.vni, ip_address(intf.src_address[:4]), \
-                                ip_address(intf.dst_address[:4]), intf.sw_if_index)
                         if intf.vni == vxid and \
                            ip_address(intf.src_address[:4]) == ip_address(unicode(src)) and \
                            ip_address(intf.dst_address[:4]) == ip_address(unicode(dst)):
