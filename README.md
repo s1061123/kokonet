@@ -30,7 +30,7 @@ This component has VPP (from fd.io) and its driver. All container's data traffic
 
 # How to install?
 
-To be written in wiki
+To be written in [wiki](https://github.com/s1061123/kokonet/wiki).
 
 # Future works
 
