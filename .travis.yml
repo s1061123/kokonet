@@ -18,4 +18,5 @@ after_success:
   # publish uploaded file
   - curl -X POST -u${BINTRAY_USER}:${BINTRAY_APIKEY} https://api.bintray.com/content/${BINTRAY_USER}/generic/kokonet/snapshot-${TRAVIS_COMMIT}/publish
   # put it in bintray download list
-  - sleep 10 && curl -X PUT -H "Accept: application/json" -H "Content-type: application/json" -u${BINTRAY_USER}:${BINTRAY_APIKEY} https://api.bintray.com/file_metadata/${BINTRAY_USER}/generic/snapshot-${TRAVIS_COMMIT}/kokonet-cni_linux_amd64-${TRAVIS_COMMIT}.tar.gz -d '{"list_in_downloads":true}'
+  - sleep 20
+  - "curl -X PUT -H 'Accept: application/json' -H 'Content-type: application/json' -u${BINTRAY_USER}:${BINTRAY_APIKEY} https://api.bintray.com/file_metadata/${BINTRAY_USER}/generic/kokonet-cni_linux_amd64-${TRAVIS_COMMIT}.tar.gz -d '{\"list_in_downloads\":true}'"
