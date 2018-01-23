@@ -1,0 +1,6 @@
+language: go
+
+script:
+ - cd kokonet-cni
+ - go get .
+ - go build
