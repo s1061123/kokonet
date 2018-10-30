@@ -3,7 +3,7 @@ chardet==3.0.4
 click==6.7
 enum34==1.1.6
 etcd3==0.7.0
-Flask==0.12.2
+Flask==0.12.3
 futures==3.2.0
 grpcio==1.8.1
 gunicorn==19.7.1
@@ -13,7 +13,7 @@ Jinja2==2.10
 MarkupSafe==1.0
 monotonic==1.4
 protobuf==3.5.0.post1
-requests==2.18.4
+requests==2.20.0
 six==1.11.0
 tenacity==4.8.0
 urllib3==1.22
